@@ -9,14 +9,18 @@ transform = v2.Compose([
 ])
 # .ToDtype = pixel values as 0.0 to 1.0, through .Normalize from range -1 to 1 -> für ausgewogeneren Gradienten
 
-# Create datasets for training & validation, download if necessary
-training_set = torchvision.datasets.FashionMNIST('./data', train=True, transform=transform, download=True)
-validation_set = torchvision.datasets.FashionMNIST('./data', train=False, transform=transform, download=True)
-# donwload=false -> 10,000 test image (validation), =true -> 60,000 training images
+full_training_set = torchvision.datasets.FashionMNIST('./data', train=True, transform=transform, download=True)
+test_set = torchvision.datasets.FashionMNIST('./data', train=False, transform=transform, download=True)
+# train=True -> 60,000 training images, train=False -> 10,000 test images
+# download=True only downloads if not already present
 
-# Create data loaders for our datasets; shuffle for training, not for validation
+# Split training images into 54,000 train / 6,000 validation; fixed seed -> same split every run
+training_set, validation_set = torch.utils.data.random_split(
+    full_training_set, [54_000, 6_000], generator=torch.Generator().manual_seed(42))
+
 training_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True)
 validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False)
+test_loader = torch.utils.data.DataLoader(test_set, batch_size=4, shuffle=False)  # only for final evaluation
 
 # Class labels
 classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',

@@ -14,6 +14,7 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
+    epoch_loss = 0.
     last_loss = 0.
 
     for i, data in enumerate(training_loader):
@@ -32,6 +33,8 @@ def train_one_epoch(epoch_index, tb_writer):
         optimizer.step()
 
         running_loss += loss.item()
+        epoch_loss += loss.item()
+
         if i % 1000 == 999:
             last_loss = running_loss / 1000 # loss per batch
             print(f'  batch {i + 1} loss: {last_loss}')
@@ -39,9 +42,8 @@ def train_one_epoch(epoch_index, tb_writer):
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
             running_loss = 0.
 
-    return last_loss
+    return epoch_loss / len(training_loader)  # average over whole epoch
 
-# Initializing in a separate cell so we can easily add more epochs to the same run
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 writer = SummaryWriter(f'runs/fashion_trainer_{timestamp}')
 epoch_number = 0
@@ -68,7 +70,7 @@ for epoch in range(EPOCHS):
             vinputs, vlabels = vdata
             voutputs = model(vinputs)
             vloss = loss_fn(voutputs, vlabels)
-            running_vloss += vloss
+            running_vloss += vloss.item()
 
     avg_vloss = running_vloss / (i + 1)
     print(f'LOSS train {avg_loss} valid {avg_vloss}')

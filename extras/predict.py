@@ -2,15 +2,17 @@ import glob
 import torch
 import os
 
-from data import validation_loader, classes
+from data import validation_loader, test_loader, classes
 from model import GarmentClassifier
 
-path = max(glob.glob('models/model_*'), key=os.path.getmtime) # newest checkpoint = best one
+loader = validation_loader  # switch to test_loader only for the final evaluation
+
+path = max(glob.glob('models/model_*'), key=os.path.getmtime)  # newest checkpoint = best of latest run
 model = GarmentClassifier()
 model.load_state_dict(torch.load(path))
 model.eval()
 
-images, labels = next(iter(validation_loader))  # first batch of 4
+images, labels = next(iter(loader))  # first batch of 4
 with torch.no_grad():
     outputs = model(images)
 predicted = outputs.argmax(dim=1)  # index of the highest logit = predicted class
@@ -22,8 +24,8 @@ for p, l in zip(predicted, labels):
 correct = 0
 total = 0
 with torch.no_grad():
-    for images, labels in validation_loader:            # all 10,000 validation images
+    for images, labels in loader:                        # all images of the chosen set
         predicted = model(images).argmax(dim=1)
-        correct += (predicted == labels).sum().item()   # count matches in this batch
+        correct += (predicted == labels).sum().item()    # count matches in this batch
         total += labels.size(0)                          # batch size (4)
 print(f'accuracy: {correct / total:.2%} ({correct}/{total})')

@@ -1,16 +1,20 @@
 import torch
 import os
+import time
 
 from data import training_loader, validation_loader
 from model import GarmentClassifier
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
+RUN_NAME = '01_bs64_lr0.01'
+LOG_EVERY = 100  # batches between Loss/train logs (843 batches per epoch now)
+
 torch.manual_seed(0) # zum testen bzw vergleichen
 
 model = GarmentClassifier()
 loss_fn = torch.nn.CrossEntropyLoss() # softmax(logits->Wslk.)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9) # 90 % der vorherige Schrittrichtung mitnehmen
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9) # 90 % der vorherige Schrittrichtung mitnehmen
 
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
@@ -35,8 +39,8 @@ def train_one_epoch(epoch_index, tb_writer):
         running_loss += loss.item()
         epoch_loss += loss.item()
 
-        if i % 1000 == 999:
-            last_loss = running_loss / 1000 # loss per batch
+        if i % LOG_EVERY == LOG_EVERY - 1:
+            last_loss = running_loss / LOG_EVERY # loss per batch
             print(f'  batch {i + 1} loss: {last_loss}')
             tb_x = epoch_index * len(training_loader) + i + 1
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
@@ -45,17 +49,19 @@ def train_one_epoch(epoch_index, tb_writer):
     return epoch_loss / len(training_loader)  # average over whole epoch
 
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-writer = SummaryWriter(f'runs/v1/lr0.001_bs4_{timestamp}')
+writer = SummaryWriter(f'runs/v1/{RUN_NAME}_{timestamp}')
 epoch_number = 0
 
 EPOCHS = 10
 
 best_vloss = 1_000_000.
 
+start = time.time()
+
 for epoch in range(EPOCHS):
     print(f'EPOCH {epoch_number + 1}:')
 
-    # Make sure gradient tracking is on, and do a pass over the data
+    # Make sure gradient tracking is on, and do a pass over the data -> 
     model.train(True)
     avg_loss = train_one_epoch(epoch_number, writer)
 
@@ -90,4 +96,7 @@ for epoch in range(EPOCHS):
         torch.save(model.state_dict(), model_path)
 
     epoch_number += 1
+
+
+print(f'training time: {(time.time() - start) / 60:.1f} min')
 

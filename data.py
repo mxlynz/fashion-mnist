@@ -18,9 +18,9 @@ test_set = torchvision.datasets.FashionMNIST('./data', train=False, transform=tr
 training_set, validation_set = torch.utils.data.random_split(
     full_training_set, [54_000, 6_000], generator=torch.Generator().manual_seed(42))
 
-training_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True)
-validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False)
-test_loader = torch.utils.data.DataLoader(test_set, batch_size=4, shuffle=False)  # only for final evaluation
+training_loader = torch.utils.data.DataLoader(training_set, batch_size=64, shuffle=True)
+validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=64, shuffle=False)
+test_loader = torch.utils.data.DataLoader(test_set, batch_size=64, shuffle=False)  # only for final evaluation
 
 # Class labels
 classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',

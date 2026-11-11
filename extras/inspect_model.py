@@ -23,7 +23,7 @@ for k, ax in enumerate(axes):
 fig.suptitle('conv1 filters')
 
 # 2) feature maps for one example image (change index to look at other images)
-img, label = validation_set[0]  # 1×28×28
+img, label = validation_set[2]  # 1×28×28 # 0 statt x
 with torch.no_grad():
     maps1 = F.relu(model.conv1(img.unsqueeze(0)))       # 1×6×24×24
     maps2 = F.relu(model.conv2(model.pool(maps1)))      # 1×16×8×8

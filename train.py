@@ -9,8 +9,8 @@ from datetime import datetime
 torch.manual_seed(0) # zum testen bzw vergleichen
 
 model = GarmentClassifier()
-loss_fn = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+loss_fn = torch.nn.CrossEntropyLoss() # softmax(logits->Wslk.)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9) # 90 % der vorherige Schrittrichtung mitnehmen
 
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
@@ -24,12 +24,12 @@ def train_one_epoch(epoch_index, tb_writer):
         # to replace instead of adding gradients 
         optimizer.zero_grad()
 
-        outputs = model(inputs) # forward pass (liefert logits)
+        outputs = model(inputs) # forward pass (liefert logits für Vorhersage)
 
         loss = loss_fn(outputs, labels) # fehler 
         loss.backward() # computation of gradient of loss / backpropagation
 
-        # Adjust learning weights
+        # Adjust learning weights -> Gewichte in Richtung -Gradient
         optimizer.step()
 
         running_loss += loss.item()
@@ -45,7 +45,7 @@ def train_one_epoch(epoch_index, tb_writer):
     return epoch_loss / len(training_loader)  # average over whole epoch
 
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-writer = SummaryWriter(f'runs/fashion_trainer_{timestamp}')
+writer = SummaryWriter(f'runs/v1/lr0.001_bs4_{timestamp}')
 epoch_number = 0
 
 EPOCHS = 10

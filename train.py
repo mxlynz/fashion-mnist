@@ -7,14 +7,14 @@ from model import GarmentClassifier
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-RUN_NAME = '01_bs64_lr0.01'
+RUN_NAME = '03_bs64_adam_norm'
 LOG_EVERY = 100  # batches between Loss/train logs (843 batches per epoch now)
 
 torch.manual_seed(0) # zum testen bzw vergleichen
 
 model = GarmentClassifier()
 loss_fn = torch.nn.CrossEntropyLoss() # softmax(logits->Wslk.)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9) # 90 % der vorherige Schrittrichtung mitnehmen
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.

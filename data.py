@@ -5,7 +5,7 @@ from torchvision.transforms import v2
 transform = v2.Compose([
     v2.ToImage(),
     v2.ToDtype(torch.float32, scale=True),
-    v2.Normalize((0.5,), (0.5,))
+    v2.Normalize((0.2856,), (0.3528,)) # before:(0.5,), (0.5,)
 ])
 # .ToDtype = pixel values as 0.0 to 1.0, through .Normalize from range -1 to 1 -> für ausgewogeneren Gradienten
 

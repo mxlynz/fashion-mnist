@@ -60,6 +60,7 @@ class OurClassifier(nn.Module):
         return x
 
 
+
 MODELS = {
     'lenet': GarmentClassifier,
     'v2': OurClassifier,

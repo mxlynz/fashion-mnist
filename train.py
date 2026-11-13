@@ -10,7 +10,7 @@ from datetime import datetime
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
 ARCH = 'v2'
-RUN_NAME = '01_bs64_adam_norm'
+RUN_NAME = '02_bs64_adam_norm_ep30'
 run_dir = f'{ARCH}/{RUN_NAME}_{timestamp}'
 os.makedirs(f'models/{run_dir}', exist_ok=True)
 LOG_EVERY = 100  # batches between Loss/train logs (843 batches per epoch now)
@@ -57,7 +57,7 @@ def train_one_epoch(epoch_index, tb_writer):
 writer = SummaryWriter(f'runs/{run_dir}')
 epoch_number = 0
 
-EPOCHS = 10
+EPOCHS = 20
 
 best_vloss = 1_000_000.
 

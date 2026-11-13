@@ -5,44 +5,53 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 from data import validation_set, classes
-from model import GarmentClassifier
+from model import MODELS
 
-path = max(glob.glob('models/model_*'), key=os.path.getmtime)  # newest checkpoint
-model = GarmentClassifier()
-model.load_state_dict(torch.load(path))
+RUN = None  # e.g. 'v2/02_bs64_adam_norm_ep30_20261113_175222'; None = newest
+CLASS = 6   # 0 T-shirt, 2 Pullover, 4 Coat, 6 Shirt, ...
+
+path = f'models/{RUN}/best.pt' if RUN else max(glob.glob('models/**/best.pt', recursive=True), key=os.path.getmtime)
+ckpt = torch.load(path)
+model = MODELS[ckpt['arch']]()
+model.load_state_dict(ckpt['state_dict'])
 model.eval()
+print(f'checkpoint: {path} (epoch {ckpt["epoch"]})')
+
+
+def show(t, title, **kw):  # t: C×H×W, one subplot per channel
+    c = t.shape[0]
+    cols = min(c, 8)
+    rows = (c + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(1.8 * cols, 1.8 * rows), squeeze=False)
+    for k, ax in enumerate(axes.flat):
+        if k < c:
+            ax.imshow(t[k], **kw)
+            ax.set_title(str(k), fontsize=8)
+        ax.axis('off')
+    fig.suptitle(title)
+
 
 # 1) learned conv1 filters: red = positive weight, blue = negative weight
-w = model.conv1.weight.detach()[:, 0]  # 6×5×5
+w = model.conv1.weight.detach()[:, 0]  # C×3×3
 lim = w.abs().max()
-fig, axes = plt.subplots(1, 6, figsize=(12, 2.5))
-for k, ax in enumerate(axes):
-    ax.imshow(w[k], cmap='bwr', vmin=-lim, vmax=lim)
-    ax.set_title(f'filter {k}')
-    ax.axis('off')
-fig.suptitle('conv1 filters')
+show(w, 'conv1 filters', cmap='bwr', vmin=-lim, vmax=lim)
 
-# 2) feature maps for one example image (change index to look at other images)
-img, label = validation_set[2]  # 1×28×28 # 0 statt x
+# 2) feature maps after BN + ReLU for the first image of the chosen class
+idx = next(i for i in range(len(validation_set)) if validation_set[i][1] == CLASS)
+img, label = validation_set[idx]
+
+maps = {}
+for name in ['bn1', 'bn2', 'bn3']:  # v2 layer names
+    getattr(model, name).register_forward_hook(
+        lambda m, inp, out, name=name: maps.__setitem__(name, F.relu(out)[0]))
 with torch.no_grad():
-    maps1 = F.relu(model.conv1(img.unsqueeze(0)))       # 1×6×24×24
-    maps2 = F.relu(model.conv2(model.pool(maps1)))      # 1×16×8×8
+    model(img.unsqueeze(0))
 
-fig, axes = plt.subplots(1, 7, figsize=(14, 2.5))
-axes[0].imshow(img[0], cmap='gray')
-axes[0].set_title(classes[label])
-for k in range(6):
-    axes[k + 1].imshow(maps1[0, k])
-    axes[k + 1].set_title(f'map {k}')
-for ax in axes:
-    ax.axis('off')
-fig.suptitle('conv1 feature maps (after ReLU)')
-
-fig, axes = plt.subplots(2, 8, figsize=(14, 4))
-for k, ax in enumerate(axes.flat):
-    ax.imshow(maps2[0, k])
-    ax.set_title(f'map {k}')
-    ax.axis('off')
-fig.suptitle('conv2 feature maps (after ReLU)')
+plt.figure(figsize=(2, 2))
+plt.imshow(img[0], cmap='gray')
+plt.title(classes[label])
+plt.axis('off')
+for name, m in maps.items():
+    show(m, f'{name} + ReLU: {tuple(m.shape)}')
 
 plt.show()

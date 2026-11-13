@@ -3,18 +3,24 @@ import os
 import time
 
 from data import training_loader, validation_loader
-from model import GarmentClassifier
+from model import MODELS
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-RUN_NAME = '03_bs64_adam_norm'
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+ARCH = 'v2'
+RUN_NAME = '01_bs64_adam_norm'
+run_dir = f'{ARCH}/{RUN_NAME}_{timestamp}'
+os.makedirs(f'models/{run_dir}', exist_ok=True)
 LOG_EVERY = 100  # batches between Loss/train logs (843 batches per epoch now)
 
-torch.manual_seed(0) # zum testen bzw vergleichen
+torch.manual_seed(0) # zufällige Startgewichte und Shuffle Reihenfolge im Training (später dann auch Dropout)
 
-model = GarmentClassifier()
+#model = GarmentClassifier()
+model = MODELS[ARCH]()
 loss_fn = torch.nn.CrossEntropyLoss() # softmax(logits->Wslk.)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # zu adamw
 
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
@@ -48,8 +54,7 @@ def train_one_epoch(epoch_index, tb_writer):
 
     return epoch_loss / len(training_loader)  # average over whole epoch
 
-timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-writer = SummaryWriter(f'runs/v1/{RUN_NAME}_{timestamp}')
+writer = SummaryWriter(f'runs/{run_dir}')
 epoch_number = 0
 
 EPOCHS = 10
@@ -91,9 +96,9 @@ for epoch in range(EPOCHS):
     # Track best performance, and save the model's state
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss
-        os.makedirs('models', exist_ok=True)                     # legt models/ an, falls nicht vorhanden
-        model_path = f'models/model_{timestamp}_{epoch_number}'  # speichert in models/
-        torch.save(model.state_dict(), model_path)
+        torch.save({'arch': ARCH, 'epoch': epoch_number + 1,
+                    'state_dict': model.state_dict()},
+                   f'models/{run_dir}/best.pt')
 
     epoch_number += 1
 

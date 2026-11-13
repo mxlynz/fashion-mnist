@@ -8,7 +8,7 @@ from data import training_loader, classes
 def matplotlib_imshow(img, one_channel=False):
     if one_channel:
         img = img.mean(dim=0)
-    img = img / 2 + 0.5     # unnormalize from -1,1 to 0,1
+    img = img * 0.3528 + 0.2856
     npimg = img.numpy()
     if one_channel:
         plt.imshow(npimg, cmap="Greys")
